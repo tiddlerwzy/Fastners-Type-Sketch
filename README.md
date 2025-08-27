@@ -1,2 +1,42 @@
-# Fastners-Type-Sketch
-A web-based font drawing tool supporting both grid-based drawing and freehand brush drawing modes, enabling the creation and editing of vector graphics for letters.
+# Fastners:Type Sketch - 字体绘制工具
+
+一个基于Web的字体绘制工具，支持网格模式和笔刷模式，用于创建矢量字母形状。
+
+## 功能特性
+
+- 🎨 网格绘制模式：精确的像素级绘制
+- 🖌️ 笔刷绘制模式：自由手绘
+- 📐 实时网格预览
+- 🎯 多种笔刷大小
+- 💾 本地保存和加载
+- 📤 导出为SVG格式
+- 🎨 颜色选择器
+- 🔄 撤销/重做功能
+- 📱 响应式设计
+
+## 使用方法
+
+1. 直接在浏览器中打开 `index.html`
+2. 选择绘制模式（网格或笔刷）
+3. 调整笔刷大小和颜色
+4. 开始绘制您的字体
+5. 使用保存功能保存作品
+6. 导出为SVG格式
+
+## 文件说明
+
+- `index.html` - 主程序文件，包含所有功能
+- `demo.html` - 演示文件，展示工具功能
+- `README.md` - 项目说明
+- `LICENSE` - MIT许可证
+
+## 技术栈
+
+- HTML5 Canvas
+- JavaScript (ES6+)
+- CSS3
+- SVG导出
+
+## 许可证
+
+MIT License - 详见 LICENSE 文件

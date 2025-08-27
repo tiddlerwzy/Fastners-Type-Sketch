@@ -1,0 +1,2300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fastners:Type Sketch</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #ffffff;
+            color: #333;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        /* 字母选择区 */
+        .letter-panel {
+            width: 200px;
+            background: white;
+            border: 1px solid #333;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .letter-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .letter-btn {
+            padding: 12px 8px;
+            border: 1px solid #333;
+            background: white;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 400;
+            transition: all 0.2s;
+        }
+
+        .letter-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .letter-btn.active {
+            background: #000;
+            color: white;
+        }
+
+        /* 主绘制区域 */
+        .main-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .toolbar {
+            background: white;
+            padding: 15px;
+            border: 1px solid #333;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .toolbar button {
+            padding: 8px 16px;
+            border: 1px solid #333;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .toolbar button:hover {
+            background: #f0f0f0;
+        }
+
+        .toolbar button.active {
+            background: #333 !important;
+            color: white !important;
+        }
+
+        .toolbar select {
+            padding: 8px;
+            border: 1px solid #333;
+        }
+
+        .toolbar input[type="range"] {
+            cursor: pointer;
+        }
+
+        .toolbar label {
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .drawing-area {
+            flex: 1;
+            background: white;
+            border: 1px solid #333;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .grid-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .grid {
+            position: relative;
+            border: 1px solid #333;
+        }
+
+        .grid-point {
+            cursor: pointer;
+            transition: stroke 0.2s;
+        }
+
+        .grid-point:hover line {
+            stroke: #666;
+        }
+
+        .stroke-path {
+            stroke: #000;
+            stroke-width: 2;
+            fill: none;
+            pointer-events: none;
+        }
+
+        .preview-path {
+            stroke: #000;
+            stroke-width: 1;
+            fill: none;
+        }
+
+        /* 预览区域 */
+        .preview-panel {
+            width: 300px;
+            background: white;
+            border: 1px solid #333;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .preview-title {
+            font-size: 18px;
+            font-weight: 400;
+            margin-bottom: 10px;
+        }
+
+        .letter-preview {
+            height: 200px;
+            border: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fafafa;
+        }
+
+        .text-preview {
+            border: 1px solid #333;
+            padding: 20px;
+            background: #fafafa;
+            min-height: 100px;
+            font-size: 20px;
+            line-height: 1.8;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .export-section {
+            margin-top: auto;
+        }
+
+        .export-section button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 8px;
+            border: 1px solid #333;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .export-section button:hover {
+            background: #f0f0f0;
+        }
+
+        .export-section button.primary {
+            background: #000;
+            color: white;
+        }
+
+        .export-section button.primary:hover {
+            background: #333;
+        }
+
+        /* 画笔模式样式 */
+        .brush-cursor {
+            cursor: crosshair !important;
+        }
+
+        .brush-path {
+            stroke: #666;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: 0.7;
+        }
+
+        .brush-path-final {
+            stroke: #000;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .brush-preview {
+            stroke: #666;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: 0.5;
+            stroke-dasharray: 5,5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Letter Selection Panel -->
+        <div class="letter-panel">
+            <h3 style="margin-bottom: 15px; font-weight: 400;">Letter Selection</h3>
+            <div class="letter-grid" id="letterGrid"></div>
+        </div>
+
+        <!-- Main Drawing Panel -->
+        <div class="main-panel">
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <button id="clearBtn">Clear</button>
+                <button id="undoBtn">Undo</button>
+
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button id="modeBtn" class="active">Draw Mode</button>
+            </div>
+
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label>Width Points:</label>
+                    <input type="number" id="widthSpacingInput" min="4" max="40" value="4" style="width: 60px; padding: 2px 5px;">
+                    <span>pts</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label>Height Points:</label>
+                    <input type="number" id="heightSpacingInput" min="4" max="40" value="4" style="width: 60px; padding: 2px 5px;">
+                    <span>pts</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label>Stroke Width:</label>
+                    <input type="number" id="strokeWidthInput" min="1" max="10" value="2" style="width: 60px; padding: 2px 5px;">
+                    <span>px</span>
+            </div>
+
+            </div>
+
+            <!-- Drawing Area -->
+            <div class="drawing-area">
+                <div class="grid-container" id="gridContainer">
+                    
+                    <svg id="gridSvg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+                        <defs>
+                            <pattern id="gridPattern" patternUnits="userSpaceOnUse">
+                                <path class="grid-line" d="M 0 0 L 0 1000" />
+                                <path class="grid-line" d="M 0 0 L 1000 0" />
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#gridPattern)" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview Panel -->
+        <div class="preview-panel">
+            <div>
+                <div class="preview-title">Letter Preview</div>
+                <div class="letter-preview" id="letterPreview">
+                    <svg id="previewSvg" width="100" height="100" viewBox="0 0 100 100"></svg>
+                </div>
+            </div>
+
+            <div>
+                <div class="preview-title">Text Preview</div>
+                <div class="text-preview" id="textPreview">
+                    ABCDEFGHIJKLMNOPQRSTUVWXYZ
+                </div>
+            </div>
+
+            <div class="export-section">
+                <button id="exportJsonBtn">Export JSON</button>
+                <button id="exportFontBtn" class="primary">Export SVG</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script>
+        class FontDrawingTool {
+            constructor() {
+                this.currentLetter = 'A';
+                this.widthSpacing = 133.33;
+                this.heightSpacing = 133.33;
+                this.strokes = {};
+                this.letterData = {};
+                this.selectedPoints = [];
+                this.originalGridSize = {}; // 记录每个字母的原始网格大小
+                this.selectedStroke = null; // selected stroke
+                
+                // 弯曲相关参数
+                this.BEND_STEP = 12; // 每次点击增加的弯曲量
+                this.BEND_MAX = 400; // 弯曲上限（增大角度）
+                
+                // 线条粗细
+                this.strokeWidth = 2; // 默认线条粗细
+                
+                // 拖拽状态
+                this.isDragging = false;
+                this.draggedStroke = null;
+                this.dragStartPos = null;
+                
+                // 操作历史
+                this.operationHistory = [];
+                this.historyIndex = -1;
+                
+                // 画笔模式相关属性
+                this.currentMode = 'draw'; // 'draw' 或 'brush'
+                this.isDrawing = false;
+                this.brushPath = [];
+                this.brushPathElement = null;
+                this.brushPreviewElement = null;
+                
+                this.isAdjustingBend = false; // 是否正在调整弯曲
+                
+                this.init();
+            }
+
+            init() {
+                this.createLetterGrid();
+                this.setupGrid();
+                this.setupEventListeners();
+                this.loadLetter('A');
+                this.updateButtonStates(); // 设置初始按钮状态
+            }
+
+            createLetterGrid() {
+                const grid = document.getElementById('letterGrid');
+                const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+                
+                letters.forEach(letter => {
+                    const btn = document.createElement('button');
+                    btn.className = 'letter-btn';
+                    btn.textContent = letter;
+                    btn.onclick = () => this.loadLetter(letter);
+                    grid.appendChild(btn);
+                });
+            }
+
+            setupGrid() {
+                this.updateGrid();
+            }
+
+            updateGrid() {
+                const container = document.getElementById('gridContainer');
+                const svg = document.getElementById('gridSvg');
+                
+                // 固定区域大小
+                const fixedWidth = 400;
+                const fixedHeight = 400;
+                const offset = 50;
+                
+                // 设置固定的viewBox
+                svg.setAttribute('viewBox', `0 0 ${fixedWidth + offset * 2} ${fixedHeight + offset * 2}`);
+                
+                // 清除现有内容
+                svg.innerHTML = '';
+                
+                // 固定十字点大小
+                const crossSize = 4;
+                
+                // 计算在当前间距下能显示多少个网格点
+                const maxWidthPoints = Math.floor(fixedWidth / this.widthSpacing);
+                const maxHeightPoints = Math.floor(fixedHeight / this.heightSpacing);
+                
+                // 分别计算宽度和高度方向的实际网格大小，允许超过默认网格大小
+                const actualWidthSize = maxWidthPoints;
+                const actualHeightSize = maxHeightPoints;
+                
+                // 添加网格点（十字形状）
+                for (let x = 0; x <= actualWidthSize; x++) {
+                    for (let y = 0; y <= actualHeightSize; y++) {
+                        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                        group.setAttribute('class', 'grid-point');
+                        group.setAttribute('data-x', x);
+                        group.setAttribute('data-y', y);
+                        
+                        // 水平线
+                const hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        hLine.setAttribute('x1', offset + x * this.widthSpacing - crossSize);
+                        hLine.setAttribute('y1', offset + y * this.heightSpacing);
+                        hLine.setAttribute('x2', offset + x * this.widthSpacing + crossSize);
+                        hLine.setAttribute('y2', offset + y * this.heightSpacing);
+                        hLine.setAttribute('stroke', '#ccc');
+                hLine.setAttribute('stroke-width', '1');
+                
+                        // 垂直线
+                        const vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        vLine.setAttribute('x1', offset + x * this.widthSpacing);
+                        vLine.setAttribute('y1', offset + y * this.heightSpacing - crossSize);
+                        vLine.setAttribute('x2', offset + x * this.widthSpacing);
+                        vLine.setAttribute('y2', offset + y * this.heightSpacing + crossSize);
+                        vLine.setAttribute('stroke', '#ccc');
+                        vLine.setAttribute('stroke-width', '1');
+                        
+                        group.appendChild(hLine);
+                        group.appendChild(vLine);
+                        svg.appendChild(group);
+                    }
+                }
+                
+                // 添加绘制层
+                const drawLayer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                drawLayer.setAttribute('id', 'drawLayer');
+                svg.appendChild(drawLayer);
+            }
+
+            setupEventListeners() {
+                const svg = document.getElementById('gridSvg');
+                
+                svg.addEventListener('click', (e) => this.handleClick(e));
+                svg.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+                svg.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                svg.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+                svg.addEventListener('mouseleave', () => this.clearHoverEffect());
+                
+                document.getElementById('clearBtn').onclick = () => this.clearLetter();
+                document.getElementById('undoBtn').onclick = () => this.undo();
+
+
+                
+                // 宽度点数输入框
+                const widthSpacingInput = document.getElementById('widthSpacingInput');
+                // 计算当前点数
+                const fixedWidth = 400;
+                const currentWidthPoints = Math.floor(fixedWidth / this.widthSpacing) + 1;
+                widthSpacingInput.value = currentWidthPoints;
+                
+                widthSpacingInput.oninput = (e) => {
+                    const points = parseInt(e.target.value);
+                    if (points >= 4 && points <= 40) {
+                        // 根据点数计算间距：points个点需要(points-1)个间隔
+                        this.widthSpacing = Math.floor(fixedWidth / (points - 1));
+                    this.updateGrid();
+                        this.adaptStrokesToNewGrid();
+                    }
+                };
+                
+                // 输入框失去焦点时验证并应用
+                widthSpacingInput.onblur = (e) => {
+                    let points = parseInt(e.target.value);
+                    if (isNaN(points) || points < 4) points = 4;
+                    if (points > 40) points = 40;
+                    e.target.value = points;
+                    this.widthSpacing = Math.floor(fixedWidth / (points - 1));
+                    this.updateGrid();
+                    this.adaptStrokesToNewGrid();
+                };
+                
+                // 高度点数输入框
+                const heightSpacingInput = document.getElementById('heightSpacingInput');
+                // 计算当前点数
+                const fixedHeight = 400;
+                const currentHeightPoints = Math.floor(fixedHeight / this.heightSpacing) + 1;
+                heightSpacingInput.value = currentHeightPoints;
+                
+                heightSpacingInput.oninput = (e) => {
+                    const points = parseInt(e.target.value);
+                    if (points >= 4 && points <= 40) {
+                        // 根据点数计算间距：points个点需要(points-1)个间隔
+                        this.heightSpacing = Math.floor(fixedHeight / (points - 1));
+                        this.updateGrid();
+                        this.adaptStrokesToNewGrid();
+                    }
+                };
+                
+                // 输入框失去焦点时验证并应用
+                heightSpacingInput.onblur = (e) => {
+                    let points = parseInt(e.target.value);
+                    if (isNaN(points) || points < 4) points = 4;
+                    if (points > 40) points = 40;
+                    e.target.value = points;
+                    this.heightSpacing = Math.floor(fixedHeight / (points - 1));
+                    this.updateGrid();
+                    this.adaptStrokesToNewGrid();
+                };
+                
+                // 线条粗细输入框
+                const strokeWidthInput = document.getElementById('strokeWidthInput');
+                strokeWidthInput.value = this.strokeWidth;
+                strokeWidthInput.oninput = (e) => {
+                    const value = parseInt(e.target.value);
+                    if (value >= 1 && value <= 10) {
+                        this.strokeWidth = value;
+                        console.log('Stroke width changed to:', this.strokeWidth);
+                        this.drawStrokes();
+                        this.updatePreview();
+                        this.updateTextPreview();
+                    }
+                };
+                strokeWidthInput.onblur = (e) => {
+                    const value = parseInt(e.target.value);
+                    if (value < 1) {
+                        e.target.value = 1;
+                        this.strokeWidth = 1;
+                    } else if (value > 10) {
+                        e.target.value = 10;
+                        this.strokeWidth = 10;
+                    }
+                    this.drawStrokes();
+                    this.updatePreview();
+                    this.updateTextPreview();
+                };
+                
+
+                
+                
+                document.getElementById('exportJsonBtn').onclick = () => this.exportJSON();
+                document.getElementById('exportFontBtn').onclick = () => this.exportFont();
+                
+                // 模式切换按钮
+                document.getElementById('modeBtn').onclick = () => this.toggleMode();
+            }
+
+            getMousePos(e) {
+                const svg = document.getElementById('gridSvg');
+                const CTM = svg.getScreenCTM();
+                return {
+                    x: (e.clientX - CTM.e) / CTM.a,
+                    y: (e.clientY - CTM.f) / CTM.d
+                };
+            }
+
+            getGridPoint(x, y) {
+                const offset = 50;
+                const gridTolerance = 12; // 网格点点击容差
+                
+                // 计算最近的网格点
+                const gridX = Math.round((x - offset) / this.widthSpacing);
+                const gridY = Math.round((y - offset) / this.heightSpacing);
+                
+                // 计算实际的网格大小
+                const fixedWidth = 400;
+                const fixedHeight = 400;
+                const maxWidthPoints = Math.floor(fixedWidth / this.widthSpacing);
+                const maxHeightPoints = Math.floor(fixedHeight / this.heightSpacing);
+                const actualWidthSize = maxWidthPoints;
+                const actualHeightSize = maxHeightPoints;
+                
+                // 检查是否在网格范围内
+                if (gridX >= 0 && gridX <= actualWidthSize && gridY >= 0 && gridY <= actualHeightSize) {
+                    // 计算点击位置到网格点的距离
+                    const gridPixelX = offset + gridX * this.widthSpacing;
+                    const gridPixelY = offset + gridY * this.heightSpacing;
+                    const distance = Math.sqrt((x - gridPixelX) ** 2 + (y - gridPixelY) ** 2);
+                    
+                    // 如果距离在容差范围内，返回网格点
+                    if (distance <= gridTolerance) {
+                    return { x: gridX, y: gridY };
+                    }
+                }
+                return null;
+            }
+
+
+
+            handleClick(e) {
+                if (this.currentMode === 'brush') return; // 画笔模式下不处理点击
+                
+                const pos = this.getMousePos(e);
+                
+                // 如果正在拖拽，不处理点击事件
+                if (this.isDragging) {
+                    return;
+                }
+                
+                // 如果没有点击到线段，再检查是否点击到了网格点
+                const point = this.getGridPoint(pos.x, pos.y);
+                if (point) {
+                    this.handlePointClick(point);
+                    return;
+                }
+                
+                // 如果都没有点击到，清除选择
+                this.clearStrokeSelection();
+            }
+
+            handleMouseMove(e) {
+                const pos = this.getMousePos(e);
+                
+                // 如果正在拖拽，处理拖拽逻辑
+                if (this.isDragging && this.draggedStroke) {
+                    this.handleDragMove(pos);
+                    return;
+                }
+                
+                // 画笔模式处理
+                if (this.currentMode === 'brush') {
+                    this.handleBrushMouseMove(e);
+                    return;
+                }
+                
+                // 首先检查是否悬停在网格点上
+                const point = this.getGridPoint(pos.x, pos.y);
+                if (point) {
+                    this.showGridPointHover(point);
+                    return;
+                }
+                
+                // 检查是否悬停在线段上（使用更大的容差来提供更好的悬停体验）
+                const strokeId = this.findStrokeAtPositionWithTolerance(pos, 35); // 悬停容差稍大，便于发现可拖拽的线段
+                if (strokeId !== null) {
+                    this.showHoverEffect(strokeId);
+                    return;
+                }
+                
+                // 清除悬停效果
+                this.clearHoverEffect();
+                this.clearGridPointHover();
+            }
+
+            handleMouseDown(e) {
+                if (this.currentMode === 'brush') {
+                    this.handleBrushMouseDown(e);
+                    return;
+                }
+                
+                const pos = this.getMousePos(e);
+                
+                // 检查是否点击到了线段（使用与悬停相同的容差）
+                const strokeId = this.findStrokeAtPositionWithTolerance(pos, 35);
+                if (strokeId !== null) {
+                    // 直接开始拖拽，不需要先选中
+                    this.startDrag(strokeId, pos);
+                    e.preventDefault(); // 防止触发click事件
+                }
+            }
+
+            handleMouseUp(e) {
+                if (this.currentMode === 'brush') {
+                    this.handleBrushMouseUp(e);
+                    return;
+                }
+                
+                this.endDrag();
+            }
+
+            selectStrokeForDrag(strokeId) {
+                // 清除之前的选择
+                this.clearStrokeSelection();
+                
+                // 设置新的选择
+                this.selectedStroke = strokeId;
+                this.highlightSelectedStroke(strokeId);
+                
+                // 确保选中状态正确显示
+                    this.drawStrokes();
+                    this.updatePreview();
+                this.updateTextPreview();
+            }
+
+            startDrag(strokeId, pos) {
+                this.isDragging = true;
+                this.draggedStroke = strokeId;
+                this.dragStartPos = pos;
+                
+                // 设置选中状态
+                this.selectedStroke = strokeId;
+                this.highlightSelectedStroke(strokeId);
+                
+                const stroke = this.strokes[strokeId];
+                if (!stroke.bend) {
+                    stroke.bend = 0;
+                    stroke.side = 1;
+                }
+                
+                // 记录拖拽开始前的完整状态
+                this.dragStartState = {
+                    strokeId: strokeId,
+                    bend: stroke.bend || 0,
+                    side: stroke.side || 1
+                };
+                
+                // 改变鼠标样式
+                document.getElementById('gridSvg').style.cursor = 'grabbing';
+            }
+
+            handleDragMove(pos) {
+                if (!this.isDragging || !this.draggedStroke) return;
+                
+                const stroke = this.strokes[this.draggedStroke];
+                if (!stroke || stroke.length < 2) return;
+                
+                // 计算拖拽方向和距离
+                const dx = pos.x - this.dragStartPos.x;
+                const dy = pos.y - this.dragStartPos.y;
+                
+                // 计算线段的方向向量
+                const offset = 50;
+                const p1 = stroke[0];
+                const p2 = stroke[stroke.length - 1];
+                const x1 = offset + p1.x * this.widthSpacing;
+                const y1 = offset + p1.y * this.heightSpacing;
+                const x2 = offset + p2.x * this.widthSpacing;
+                const y2 = offset + p2.y * this.heightSpacing;
+                
+                const segmentDx = x2 - x1;
+                const segmentDy = y2 - y1;
+                const segmentLength = Math.sqrt(segmentDx * segmentDx + segmentDy * segmentDy);
+                
+                if (segmentLength === 0) return;
+                
+                // 计算法向量（垂直于线段）
+                const normalX = -segmentDy / segmentLength;
+                const normalY = segmentDx / segmentLength;
+                
+                // 计算拖拽在法向量方向上的投影
+                const dragProjection = dx * normalX + dy * normalY;
+                
+                // 根据投影确定弯曲方向和强度，增加拉伸范围
+                const maxBend = this.BEND_MAX;
+                const bendRatio = Math.min(Math.abs(dragProjection) / 50, 1); // 50像素对应最大弯曲（四分之一个圆）
+                const newBend = Math.round(bendRatio * maxBend);
+                
+                // 设置弯曲方向和强度
+                stroke.side = dragProjection > 0 ? 1 : -1;
+                stroke.bend = newBend;
+                
+                // 更新显示
+                this.drawStrokes();
+                this.updatePreview();
+                this.updateTextPreview();
+            }
+
+            endDrag() {
+                this.isDragging = false;
+                this.draggedStroke = null;
+                this.dragStartPos = null;
+                
+                // 记录拖拽结束后的状态
+                if (this.dragStartState) {
+                    const stroke = this.strokes[this.dragStartState.strokeId];
+                    // 只有当弯曲状态真正改变时才记录操作
+                    const currentBend = stroke.bend || 0;
+                    const currentSide = stroke.side || 1;
+                    
+                    if (currentBend !== this.dragStartState.bend || currentSide !== this.dragStartState.side) {
+                        this.recordOperation('modify_bend', {
+                            strokeId: this.dragStartState.strokeId,
+                            oldBend: this.dragStartState.bend,
+                            oldSide: this.dragStartState.side,
+                            newBend: currentBend,
+                            newSide: currentSide
+                        });
+                    }
+                    this.dragStartState = null;
+                }
+                
+                // 保持选中状态，允许继续拖拽调整
+                // 不清除选中状态，这样用户可以继续调整
+                
+                // 恢复鼠标样式
+                document.getElementById('gridSvg').style.cursor = 'default';
+                
+                // 更新显示
+                this.drawStrokes();
+                this.updatePreview();
+                this.updateTextPreview();
+            }
+
+            recordOperation(type, data) {
+                // 如果当前不在历史末尾，删除后面的历史
+                if (this.historyIndex < this.operationHistory.length - 1) {
+                    this.operationHistory = this.operationHistory.slice(0, this.historyIndex + 1);
+                }
+                
+                // 添加新操作
+                this.operationHistory.push({ type, data, timestamp: Date.now() });
+                this.historyIndex = this.operationHistory.length - 1;
+                
+                // 限制历史记录数量（最多50个操作）
+                if (this.operationHistory.length > 50) {
+                    this.operationHistory.shift();
+                    this.historyIndex--;
+                }
+            }
+
+            undo() {
+                if (this.historyIndex >= 0) {
+                    const operation = this.operationHistory[this.historyIndex];
+                    this.historyIndex--;
+                    
+                    switch (operation.type) {
+                        case 'add_stroke':
+                            // 撤销添加线段 - 删除整个线段
+                            delete this.strokes[operation.data.strokeId];
+                            break;
+                            
+                        case 'modify_bend':
+                            // 撤销弯曲修改 - 让曲线变回直线
+                            const stroke = this.strokes[operation.data.strokeId];
+                            if (stroke) {
+                                stroke.bend = 0;  // 重置为直线
+                                stroke.side = 1;  // 重置弯曲方向
+                            }
+                            break;
+                    }
+                    
+                    // 更新显示
+                    this.drawStrokes();
+                    this.updatePreview();
+                    this.updateTextPreview();
+                    this.autoSaveLetter();
+                }
+            }
+
+            showHoverEffect(strokeId) {
+                // 如果正在拖拽，不显示悬停效果
+                if (this.isDragging) return;
+                
+                // 清除之前的悬停效果
+                this.clearHoverEffect();
+                
+                const stroke = this.strokes[strokeId];
+                if (stroke && stroke.length >= 2) {
+                    // 创建悬停效果（加粗显示）
+                    this.drawHoverStroke(stroke, strokeId);
+                }
+            }
+
+            clearHoverEffect() {
+                const svg = document.getElementById('gridSvg');
+                const hoverElements = svg.querySelectorAll('.hover-stroke');
+                hoverElements.forEach(el => el.remove());
+            }
+
+            drawHoverStroke(stroke, strokeId) {
+                const svg = document.getElementById('gridSvg');
+                const offset = 50;
+                
+                if (stroke.type === 'curve') {
+                    // 悬停效果的贝塞尔曲线
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d', stroke.path);
+                    path.setAttribute('class', 'hover-stroke');
+                    path.setAttribute('stroke', '#666');
+                    path.setAttribute('stroke-width', (this.strokeWidth + 2).toString());
+                    path.setAttribute('fill', 'none');
+                    path.setAttribute('stroke-linecap', 'round');
+                    path.style.strokeWidth = (this.strokeWidth + 2) + 'px';
+                    path.style.opacity = '0.8';
+                    svg.appendChild(path);
+                } else if (stroke.bend && stroke.bend > 0) {
+                    // 悬停效果的弯曲线段
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    const pathData = this.generateBentPath(stroke, offset);
+                    path.setAttribute('d', pathData);
+                    path.setAttribute('class', 'hover-stroke');
+                    path.setAttribute('stroke', '#666');
+                    path.setAttribute('strokeWidth', (this.strokeWidth + 2).toString());
+                    path.setAttribute('fill', 'none');
+                    path.setAttribute('stroke-linecap', 'round');
+                    path.style.strokeWidth = (this.strokeWidth + 2) + 'px';
+                    svg.appendChild(path);
+                } else {
+                    // 悬停效果的直线
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+                    const points = stroke.map(p => 
+                        `${offset + p.x * this.widthSpacing},${offset + p.y * this.heightSpacing}`
+                ).join(' ');
+                
+                path.setAttribute('points', points);
+                    path.setAttribute('class', 'hover-stroke');
+                                    path.setAttribute('stroke', '#666');
+                path.setAttribute('stroke-width', (this.strokeWidth + 2).toString());
+            path.setAttribute('fill', 'none');
+                path.setAttribute('stroke-linecap', 'round');
+                path.style.strokeWidth = (this.strokeWidth + 2) + 'px';
+                path.style.opacity = '0.8';
+                svg.appendChild(path);
+                }
+            }
+
+
+
+            handlePointClick(point) {
+                // 清除之前的线段选中状态，避免干扰绘制
+                if (this.selectedStroke !== null) {
+                    this.clearStrokeSelection();
+                }
+                
+                // 检查是否已经选择了这个点
+                const existingIndex = this.selectedPoints.findIndex(p => p.x === point.x && p.y === point.y);
+                if (existingIndex !== -1) {
+                    // 如果点已经被选择，则取消选择
+                    this.selectedPoints.splice(existingIndex, 1);
+                    this.clearSelectedPoints();
+                    this.selectedPoints.forEach(p => this.highlightSelectedPoint(p));
+                    return;
+                }
+                
+                this.selectedPoints.push(point);
+                this.highlightSelectedPoint(point);
+                
+                if (this.selectedPoints.length === 2) {
+                    // 创建线段
+                    const strokeId = Date.now().toString();
+                    const line = [this.selectedPoints[0], this.selectedPoints[1]];
+                    this.strokes[strokeId] = line;
+                    
+                    // 记录操作历史
+                    this.recordOperation('add_stroke', { strokeId, points: [...line] });
+                    
+                    this.drawStrokes();
+                    this.updatePreview();
+                    this.updateTextPreview();
+                    this.autoSaveLetter(); // 自动保存
+                    
+                    // 重置选择
+                    this.selectedPoints = [];
+                    this.clearSelectedPoints();
+                }
+            }
+
+            highlightSelectedPoint(point) {
+                const svg = document.getElementById('gridSvg');
+                const offset = 50;
+                
+                const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                group.setAttribute('class', 'selected-point');
+                
+                // 固定选中点十字大小，比普通点稍大
+                const crossSize = 6;
+                
+                // 水平线
+                const hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                hLine.setAttribute('x1', offset + point.x * this.widthSpacing - crossSize);
+                hLine.setAttribute('y1', offset + point.y * this.heightSpacing);
+                hLine.setAttribute('x2', offset + point.x * this.widthSpacing + crossSize);
+                hLine.setAttribute('y2', offset + point.y * this.heightSpacing);
+                hLine.setAttribute('stroke', '#666');
+                hLine.setAttribute('stroke-width', '2');
+                
+                // 垂直线
+                const vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                vLine.setAttribute('x1', offset + point.x * this.widthSpacing);
+                vLine.setAttribute('y1', offset + point.y * this.heightSpacing - crossSize);
+                vLine.setAttribute('x2', offset + point.x * this.widthSpacing);
+                vLine.setAttribute('y2', offset + point.y * this.heightSpacing + crossSize);
+                vLine.setAttribute('stroke', '#666');
+                vLine.setAttribute('stroke-width', '2');
+                
+                group.appendChild(hLine);
+                group.appendChild(vLine);
+                svg.appendChild(group);
+            }
+
+            clearSelectedPoints() {
+                const selectedPoints = document.querySelectorAll('.selected-point');
+                selectedPoints.forEach(point => point.remove());
+            }
+
+
+
+
+
+            toggleMode() {
+                this.currentMode = this.currentMode === 'draw' ? 'brush' : 'draw';
+                this.updateButtonStates();
+                this.updateCursor();
+                
+                // 清除画笔状态
+                if (this.currentMode === 'draw') {
+                    this.clearBrushState();
+                }
+            }
+
+            updateButtonStates() {
+                const modeBtn = document.getElementById('modeBtn');
+                
+                if (this.currentMode === 'draw') {
+                    modeBtn.textContent = 'Draw Mode';
+                    modeBtn.classList.add('active');
+                } else {
+                    modeBtn.textContent = 'Brush Mode';
+                    modeBtn.classList.remove('active');
+                }
+            }
+
+            updateCursor() {
+                const svg = document.getElementById('gridSvg');
+                if (this.currentMode === 'brush') {
+                    svg.classList.add('brush-cursor');
+                } else {
+                    svg.classList.remove('brush-cursor');
+                }
+            }
+
+            clearBrushState() {
+                this.isDrawing = false;
+                this.brushPath = [];
+                if (this.brushPathElement) {
+                    this.brushPathElement.remove();
+                    this.brushPathElement = null;
+                }
+                if (this.brushPreviewElement) {
+                    this.brushPreviewElement.remove();
+                    this.brushPreviewElement = null;
+                }
+            }
+
+            // 画笔模式的事件处理
+            handleBrushMouseDown(e) {
+                if (this.currentMode !== 'brush') return;
+                
+                this.isDrawing = true;
+                this.brushPath = [];
+                const pos = this.getMousePos(e);
+                this.brushPath.push(pos);
+                
+                // 创建画笔路径元素
+                this.brushPathElement = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                this.brushPathElement.setAttribute('class', 'brush-path');
+                this.brushPathElement.setAttribute('stroke-width', this.strokeWidth.toString());
+                document.getElementById('gridSvg').appendChild(this.brushPathElement);
+                
+                this.updateBrushPath();
+            }
+
+            handleBrushMouseMove(e) {
+                if (this.currentMode !== 'brush' || !this.isDrawing) return;
+                
+                const pos = this.getMousePos(e);
+                this.brushPath.push(pos);
+                this.updateBrushPath();
+                
+                // 显示吸附预览
+                this.showSnapPreview(pos);
+            }
+
+            handleBrushMouseUp(e) {
+                if (this.currentMode !== 'brush' || !this.isDrawing) return;
+                
+                this.isDrawing = false;
+                
+                // 完成绘制，吸附到网格点
+                this.finalizeBrushStroke();
+                
+                // 清除预览
+                if (this.brushPreviewElement) {
+                    this.brushPreviewElement.remove();
+                    this.brushPreviewElement = null;
+                }
+            }
+
+            updateBrushPath() {
+                if (!this.brushPathElement || this.brushPath.length < 2) return;
+                
+                let pathData = `M ${this.brushPath[0].x} ${this.brushPath[0].y}`;
+                for (let i = 1; i < this.brushPath.length; i++) {
+                    pathData += ` L ${this.brushPath[i].x} ${this.brushPath[i].y}`;
+                }
+                
+                this.brushPathElement.setAttribute('d', pathData);
+            }
+
+            showSnapPreview(pos) {
+                // 清除之前的预览
+                if (this.brushPreviewElement) {
+                    this.brushPreviewElement.remove();
+                }
+                
+                // 找到最近的网格点
+                const gridPoint = this.getGridPoint(pos.x, pos.y);
+                if (gridPoint) {
+                    const offset = 50;
+                    const gridPixelX = offset + gridPoint.x * this.widthSpacing;
+                    const gridPixelY = offset + gridPoint.y * this.heightSpacing;
+                    
+                    // 创建吸附预览线
+                    this.brushPreviewElement = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    this.brushPreviewElement.setAttribute('class', 'brush-preview');
+                    this.brushPreviewElement.setAttribute('x1', pos.x);
+                    this.brushPreviewElement.setAttribute('y1', pos.y);
+                    this.brushPreviewElement.setAttribute('x2', gridPixelX);
+                    this.brushPreviewElement.setAttribute('y2', gridPixelY);
+                    this.brushPreviewElement.setAttribute('stroke-width', '1');
+                    
+                    document.getElementById('gridSvg').appendChild(this.brushPreviewElement);
+                }
+            }
+
+            finalizeBrushStroke() {
+                if (this.brushPath.length < 2) {
+                    this.clearBrushState();
+                    return;
+                }
+                
+                // 将画笔路径转换为网格点序列
+                const gridPoints = this.convertBrushPathToGridPoints();
+                
+                if (gridPoints.length >= 2) {
+                    // 创建线段
+                    const strokeId = Date.now().toString();
+                    this.strokes[strokeId] = gridPoints;
+                    
+                    // 记录操作历史
+                    this.recordOperation('add_stroke', { strokeId, points: [...gridPoints] });
+                    
+                    // 更新显示
+                    this.drawStrokes();
+                    this.updatePreview();
+                    this.updateTextPreview();
+                    this.autoSaveLetter();
+                }
+                
+                // 清除画笔状态
+                this.clearBrushState();
+            }
+
+            convertBrushPathToGridPoints() {
+                const gridPoints = [];
+                const offset = 50;
+                
+                for (let i = 0; i < this.brushPath.length; i += 3) { // 每3个点采样一次
+                    const pos = this.brushPath[i];
+                    const gridPoint = this.getGridPoint(pos.x, pos.y);
+                    
+                    if (gridPoint) {
+                        // 避免重复点
+                        const isDuplicate = gridPoints.some(p => p.x === gridPoint.x && p.y === gridPoint.y);
+                        if (!isDuplicate) {
+                            gridPoints.push(gridPoint);
+                        }
+                    }
+                }
+                
+                // 确保包含起点和终点
+                if (this.brushPath.length > 0) {
+                    const startPoint = this.getGridPoint(this.brushPath[0].x, this.brushPath[0].y);
+                    const endPoint = this.getGridPoint(this.brushPath[this.brushPath.length - 1].x, this.brushPath[this.brushPath.length - 1].y);
+                    
+                    if (startPoint && (!gridPoints.length || (gridPoints[0].x !== startPoint.x || gridPoints[0].y !== startPoint.y))) {
+                        gridPoints.unshift(startPoint);
+                    }
+                    
+                    if (endPoint && (!gridPoints.length || (gridPoints[gridPoints.length - 1].x !== endPoint.x || gridPoints[gridPoints.length - 1].y !== endPoint.y))) {
+                        gridPoints.push(endPoint);
+                    }
+                }
+                
+                return gridPoints;
+            }
+
+            findStrokeAtPosition(pos) {
+                return this.findStrokeAtPositionWithTolerance(pos, 20); // 选中容差稍微减小，提高精度
+            }
+
+            findStrokeAtPositionWithTolerance(pos, tolerance) {
+                let bestStrokeId = null;
+                let bestDistance = Infinity;
+                
+                for (const [strokeId, stroke] of Object.entries(this.strokes)) {
+                    if (stroke && stroke.length >= 2) {
+                        let currentDistance = Infinity;
+                        
+                        // 如果是弯曲的线段，使用更精确的曲线检测
+                        if (stroke.bend && stroke.bend > 0) {
+                            currentDistance = this.pointToCurveDistance(pos, stroke);
+                        } else {
+                            // 直线段检测
+                            for (let i = 0; i < stroke.length - 1; i++) {
+                                const p1 = stroke[i];
+                                const p2 = stroke[i + 1];
+                                
+                                // 将网格坐标转换为像素坐标
+                                const offset = 50;
+                                const x1 = offset + p1.x * this.widthSpacing;
+                                const y1 = offset + p1.y * this.heightSpacing;
+                                const x2 = offset + p2.x * this.widthSpacing;
+                                const y2 = offset + p2.y * this.heightSpacing;
+                                
+                                // 计算点到线段的距离
+                                const distance = this.pointToLineDistance(pos.x, pos.y, x1, y1, x2, y2);
+                                
+                                if (distance < currentDistance) {
+                                    currentDistance = distance;
+                                }
+                            }
+                        }
+                        
+                        // 根据线条粗细调整容差
+                        const adjustedTolerance = tolerance + this.strokeWidth / 2;
+                        
+                        // 如果距离在容差范围内且更近，则选择这个线段
+                        if (currentDistance <= adjustedTolerance && currentDistance < bestDistance) {
+                            bestDistance = currentDistance;
+                            bestStrokeId = strokeId;
+                        }
+                    }
+                }
+                
+                // 调试信息：当选中线段时输出距离信息
+                if (bestStrokeId) {
+                    console.log(`选中线段 ${bestStrokeId}，距离: ${bestDistance.toFixed(2)}px，容差: ${tolerance + this.strokeWidth / 2}px`);
+                }
+                
+                return bestStrokeId;
+            }
+
+            pointToLineDistance(px, py, x1, y1, x2, y2) {
+                const A = px - x1;
+                const B = py - y1;
+                const C = x2 - x1;
+                const D = y2 - y1;
+                
+                const dot = A * C + B * D;
+                const lenSq = C * C + D * D;
+                
+                if (lenSq === 0) return Math.sqrt(A * A + B * B);
+                
+                let param = dot / lenSq;
+                param = Math.max(0, Math.min(1, param));
+                
+                const xx = x1 + param * C;
+                const yy = y1 + param * D;
+                
+                const dx = px - xx;
+                const dy = py - yy;
+                
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+
+            pointToCurveDistance(pos, stroke) {
+                // 对于弯曲的线段，使用采样点来近似计算距离
+                const offset = 50;
+                const p1 = stroke[0];
+                const p2 = stroke[1];
+                
+                // 转换为像素坐标
+                const x1 = offset + p1.x * this.widthSpacing;
+                const y1 = offset + p1.y * this.heightSpacing;
+                const x2 = offset + p2.x * this.widthSpacing;
+                const y2 = offset + p2.y * this.heightSpacing;
+                
+                // 计算中点
+                const midX = (x1 + x2) / 2;
+                const midY = (y1 + y2) / 2;
+                
+                // 计算方向向量
+                const dirX = x2 - x1;
+                const dirY = y2 - y1;
+                const length = Math.sqrt(dirX * dirX + dirY * dirY);
+                
+                if (length === 0) return Math.sqrt((pos.x - x1) ** 2 + (pos.y - y1) ** 2);
+                
+                // 归一化方向向量
+                const normDirX = dirX / length;
+                const normDirY = dirY / length;
+                
+                // 计算法线向量
+                const normalX = -normDirY;
+                const normalY = normDirX;
+                
+                // 根据side调整法线方向
+                const side = stroke.side || 1;
+                const finalNormalX = normalX * side;
+                const finalNormalY = normalY * side;
+                
+                // 计算控制点
+                const bendAmount = stroke.bend || 0;
+                const bendRatio = bendAmount / this.BEND_MAX;
+                // 四分之一个圆的控制点距离：length * (√2 - 1) ≈ length * 0.414
+                const maxBendForLength = length * 0.414;
+                const adjustedBendAmount = bendRatio * maxBendForLength;
+                
+                const ctrlX = midX + finalNormalX * adjustedBendAmount;
+                const ctrlY = midY + finalNormalY * adjustedBendAmount;
+                
+                // 使用更多采样点来提高精度
+                const samples = 120; // 进一步增加采样点数量
+                let minDistance = Infinity;
+                let prevPoint = null;
+                
+                for (let i = 0; i <= samples; i++) {
+                    const t = i / samples;
+                    
+                    // 二次贝塞尔曲线公式
+                    const u = 1 - t;
+                    const x = u * u * x1 + 2 * u * t * ctrlX + t * t * x2;
+                    const y = u * u * y1 + 2 * u * t * ctrlY + t * t * y2;
+                    
+                    // 计算点到采样点的距离
+                    const dx = pos.x - x;
+                    const dy = pos.y - y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                    }
+                    
+                    // 如果有前一个点，也计算到线段的距离（更精确）
+                    if (prevPoint) {
+                        const segmentDistance = this.pointToLineDistance(pos.x, pos.y, prevPoint.x, prevPoint.y, x, y);
+                        if (segmentDistance < minDistance) {
+                            minDistance = segmentDistance;
+                        }
+                    }
+                    
+                    prevPoint = { x, y };
+                }
+                
+                // 额外的边界检查：确保点击点在曲线的合理范围内
+                const startDistance = Math.sqrt((pos.x - x1) ** 2 + (pos.y - y1) ** 2);
+                const endDistance = Math.sqrt((pos.x - x2) ** 2 + (pos.y - y2) ** 2);
+                const maxReasonableDistance = length * 1.5; // 允许的最大距离
+                
+                // 如果距离端点太远，增加惩罚
+                if (startDistance > maxReasonableDistance && endDistance > maxReasonableDistance) {
+                    minDistance += length * 0.5; // 增加距离惩罚
+                }
+                
+                return minDistance;
+            }
+
+            selectStroke(strokeId) {
+                this.selectedStroke = strokeId;
+                this.highlightSelectedStroke(strokeId);
+            }
+
+            clearStrokeSelection() {
+                this.selectedStroke = null;
+                this.clearStrokeHighlights();
+                this.clearHoverEffect();
+                
+                // 重置鼠标样式
+                document.getElementById('gridSvg').style.cursor = 'default';
+                
+                // 重新绘制以确保状态正确
+                this.drawStrokes();
+                this.updatePreview();
+                this.updateTextPreview();
+            }
+
+            highlightSelectedStroke(strokeId) {
+                this.clearStrokeHighlights();
+                
+                const stroke = this.strokes[strokeId];
+                if (stroke && stroke.length >= 2) {
+                    // 使用黑色虚线高亮
+                    this.drawStrokeHighlight(stroke, '#000000', 4);
+                }
+            }
+
+            clearStrokeHighlights() {
+                const svg = document.getElementById('gridSvg');
+                const highlights = svg.querySelectorAll('.stroke-highlight');
+                highlights.forEach(el => el.remove());
+            }
+
+
+
+            curveSide(a, b, click) {
+                // 将网格坐标转换为像素坐标
+                const offset = 50;
+                const ax = offset + a.x * this.widthSpacing;
+                const ay = offset + a.y * this.heightSpacing;
+                const bx = offset + b.x * this.widthSpacing;
+                const by = offset + b.y * this.heightSpacing;
+                
+                // 计算2D叉积
+                const abx = bx - ax;
+                const aby = by - ay;
+                const acx = click.x - ax;
+                const acy = click.y - ay;
+                
+                const crossZ = abx * acy - aby * acx;
+                return Math.sign(crossZ);
+            }
+
+            generateBentPath(stroke, offset) {
+                if (stroke.length < 2) return '';
+                
+                const a = stroke[0];
+                const b = stroke[1];
+                
+                // 转换为像素坐标
+                const ax = offset + a.x * this.widthSpacing;
+                const ay = offset + a.y * this.heightSpacing;
+                const bx = offset + b.x * this.widthSpacing;
+                const by = offset + b.y * this.heightSpacing;
+                
+                // 计算中点
+                const midX = (ax + bx) / 2;
+                const midY = (ay + by) / 2;
+                
+                // 计算方向向量
+                const dirX = bx - ax;
+                const dirY = by - ay;
+                const length = Math.sqrt(dirX * dirX + dirY * dirY);
+                
+                if (length === 0) return `M ${ax} ${ay} L ${bx} ${by}`;
+                
+                // 归一化方向向量
+                const normDirX = dirX / length;
+                const normDirY = dirY / length;
+                
+                // 计算法线向量（垂直于方向向量）
+                const normalX = -normDirY;
+                const normalY = normDirX;
+                
+                // 根据side调整法线方向
+                const side = stroke.side || 1;
+                const finalNormalX = normalX * side;
+                const finalNormalY = normalY * side;
+                
+                // 计算控制点 - 让最大弯曲达到四分之一个圆
+                const bendAmount = stroke.bend || 0;
+                const bendRatio = bendAmount / this.BEND_MAX; // 弯曲比例 (0-1)
+                // 四分之一个圆的控制点距离：length * (√2 - 1) ≈ length * 0.414
+                const maxBendForLength = length * 0.414;
+                const adjustedBendAmount = bendRatio * maxBendForLength;
+                
+                const ctrlX = midX + finalNormalX * adjustedBendAmount;
+                const ctrlY = midY + finalNormalY * adjustedBendAmount;
+                
+                // 生成二次贝塞尔曲线路径
+                return `M ${ax} ${ay} Q ${ctrlX} ${ctrlY}, ${bx} ${by}`;
+            }
+
+            convertSelectedToCurve() {
+                if (this.selectedStroke === null) {
+                    return;
+                }
+                
+                const stroke = this.strokes[this.selectedStroke];
+                if (!stroke || stroke.length < 2) {
+                    return;
+                }
+                
+                // 生成贝塞尔曲线路径
+                const curvePath = this.generateBezierCurve(stroke);
+                
+                // 替换原始笔画为曲线
+                this.strokes[this.selectedStroke] = {
+                    type: 'curve',
+                    points: stroke,
+                    path: curvePath
+                };
+                
+                // 重新绘制
+                this.drawStrokes();
+                this.updatePreview();
+                this.updateTextPreview(); // 更新文字预览
+                this.autoSaveLetter();
+                
+                // 清除选择
+                this.clearStrokeSelection();
+                
+                // 显示成功提示
+                this.showCurveSuccess();
+            }
+
+            generateBezierCurve(stroke) {
+                if (stroke.length < 2) return '';
+                
+                const offset = 50;
+                const R = 8; // 圆角半径
+                
+                // 将网格坐标转换为像素坐标
+                const points = stroke.map(p => ({
+                    x: offset + p.x * this.widthSpacing,
+                    y: offset + p.y * this.heightSpacing
+                }));
+                
+                if (points.length === 2) {
+                    // 两点之间生成简单的贝塞尔曲线
+                    const p1 = points[0];
+                    const p2 = points[1];
+                    
+                    // 计算控制点
+                    const dx = p2.x - p1.x;
+                    const dy = p2.y - p1.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    // 控制点距离为线段长度的1/3
+                    const cp1x = p1.x + dx * 0.33;
+                    const cp1y = p1.y + dy * 0.33;
+                    const cp2x = p2.x - dx * 0.33;
+                    const cp2y = p2.y - dy * 0.33;
+                    
+                    return `M ${p1.x} ${p1.y} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+                } else {
+                    // 多点之间生成圆角路径
+                    return this.generateRoundedPath(points, R);
+                }
+            }
+
+            generateRoundedPath(points, radius) {
+                if (points.length < 2) return '';
+                
+                let path = `M ${points[0].x} ${points[0].y}`;
+                
+                for (let i = 1; i < points.length - 1; i++) {
+                    const A = points[i - 1];
+                    const B = points[i];
+                    const C = points[i + 1];
+                    
+                    // 计算方向向量
+                    const v1 = this.normalizeVector(B, A); // BA 方向
+                    const v2 = this.normalizeVector(B, C); // BC 方向
+                    
+                    // 在 AB 与 BC 上后退 radius（受限于边长）
+                    const d1 = Math.min(this.distance(A, B), radius);
+                    const d2 = Math.min(this.distance(C, B), radius);
+                    
+                    const P1 = {
+                        x: B.x + v1.x * d1,
+                        y: B.y + v1.y * d1
+                    }; // 进入弧起点
+                    const P2 = {
+                        x: B.x + v2.x * d2,
+                        y: B.y + v2.y * d2
+                    }; // 退出弧终点
+                    
+                    // 直线到 P1，然后以 B 为控制点绘制二次贝塞尔到 P2
+                    path += ` L ${P1.x} ${P1.y}`;
+                    path += ` Q ${B.x} ${B.y}, ${P2.x} ${P2.y}`;
+                }
+                
+                // 最后一个点
+                if (points.length > 1) {
+                    path += ` L ${points[points.length - 1].x} ${points[points.length - 1].y}`;
+                }
+                
+                return path;
+            }
+
+            normalizeVector(from, to) {
+                let dx = to.x - from.x;
+                let dy = to.y - from.y;
+                const L = Math.hypot(dx, dy) || 1;
+                return { x: dx / L, y: dy / L };
+            }
+
+            distance(p1, p2) {
+                return Math.hypot(p2.x - p1.x, p2.y - p1.y);
+            }
+
+            showCurveSuccess() {
+                const indicator = document.getElementById('saveIndicator');
+                indicator.textContent = '已转换为曲线';
+                indicator.style.background = 'rgba(40, 167, 69, 0.7)';
+                indicator.style.display = 'block';
+                
+                setTimeout(() => {
+                    indicator.style.display = 'none';
+                }, 2000);
+            }
+
+            scaleBezierPath(pathString, scale, offset) {
+                // 解析贝塞尔曲线路径并缩放
+                const commands = pathString.match(/[MLCQ][^MLCQ]*/g) || [];
+                let scaledPath = '';
+                
+                commands.forEach(command => {
+                    const type = command[0];
+                    const coords = command.slice(1).trim().split(/[\s,]+/).map(Number);
+                    
+                    if (type === 'M' || type === 'L') {
+                        // 移动或直线命令
+                        const x = offset + coords[0] * scale;
+                        const y = offset + coords[1] * scale;
+                        scaledPath += `${type} ${x} ${y} `;
+                    } else if (type === 'C') {
+                        // 三次贝塞尔曲线命令
+                        const x1 = offset + coords[0] * scale;
+                        const y1 = offset + coords[1] * scale;
+                        const x2 = offset + coords[2] * scale;
+                        const y2 = offset + coords[3] * scale;
+                        const x = offset + coords[4] * scale;
+                        const y = offset + coords[5] * scale;
+                        scaledPath += `${type} ${x1} ${y1}, ${x2} ${y2}, ${x} ${y} `;
+                    } else if (type === 'Q') {
+                        // 二次贝塞尔曲线命令
+                        const x1 = offset + coords[0] * scale;
+                        const y1 = offset + coords[1] * scale;
+                        const x = offset + coords[2] * scale;
+                        const y = offset + coords[3] * scale;
+                        scaledPath += `${type} ${x1} ${y1}, ${x} ${y} `;
+                    }
+                });
+                
+                return scaledPath.trim();
+            }
+
+            scaleBentPath(stroke, scale, offset) {
+                if (stroke.length < 2) return '';
+                
+                const a = stroke[0];
+                const b = stroke[1];
+                
+                // 转换为缩放后的像素坐标
+                const ax = offset + a.x * this.widthSpacing * scale;
+                const ay = offset + a.y * this.heightSpacing * scale;
+                const bx = offset + b.x * this.widthSpacing * scale;
+                const by = offset + b.y * this.heightSpacing * scale;
+                
+                // 计算中点
+                const midX = (ax + bx) / 2;
+                const midY = (ay + by) / 2;
+                
+                // 计算方向向量
+                const dirX = bx - ax;
+                const dirY = by - ay;
+                const length = Math.sqrt(dirX * dirX + dirY * dirY);
+                
+                if (length === 0) return `M ${ax} ${ay} L ${bx} ${by}`;
+                
+                // 归一化方向向量
+                const normDirX = dirX / length;
+                const normDirY = dirY / length;
+                
+                // 计算法线向量（垂直于方向向量）
+                const normalX = -normDirY;
+                const normalY = normDirX;
+                
+                // 根据side调整法线方向
+                const side = stroke.side || 1;
+                const finalNormalX = normalX * side;
+                const finalNormalY = normalY * side;
+                
+                // 计算控制点 - 与主绘制区域保持一致，达到四分之一个圆
+                const bendAmount = stroke.bend || 0;
+                const bendRatio = bendAmount / this.BEND_MAX; // 弯曲比例 (0-1)
+                // 四分之一个圆的控制点距离：length * (√2 - 1) ≈ length * 0.434
+                const maxBendForLength = length * 0.414;
+                const adjustedBendAmount = bendRatio * maxBendForLength;
+                
+                const ctrlX = midX + finalNormalX * adjustedBendAmount;
+                const ctrlY = midY + finalNormalY * adjustedBendAmount;
+                
+                // 生成二次贝塞尔曲线路径
+                return `M ${ax} ${ay} Q ${ctrlX} ${ctrlY}, ${bx} ${by}`;
+            }
+
+            drawStrokeHighlight(stroke, color, width) {
+                const svg = document.getElementById('gridSvg');
+                const offset = 50;
+                
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('class', 'stroke-highlight');
+                path.setAttribute('stroke', color);
+                path.setAttribute('stroke-width', width);
+                path.setAttribute('fill', 'none');
+                path.setAttribute('opacity', '0.9');
+                path.setAttribute('stroke-dasharray', '5,5');
+                path.setAttribute('stroke-linecap', 'round');
+                
+                // 根据笔画类型绘制不同的高亮
+                if (stroke.type === 'curve') {
+                    path.setAttribute('d', stroke.path);
+                } else if (stroke.bend && stroke.bend > 0) {
+                    const pathData = this.generateBentPath(stroke, offset);
+                    path.setAttribute('d', pathData);
+                } else {
+                    let d = '';
+                    stroke.forEach((point, index) => {
+                        const x = offset + point.x * this.widthSpacing;
+                        const y = offset + point.y * this.heightSpacing;
+                        if (index === 0) {
+                            d += `M ${x} ${y}`;
+                        } else {
+                            d += ` L ${x} ${y}`;
+                        }
+                    });
+                    path.setAttribute('d', d);
+                }
+                
+                svg.appendChild(path);
+            }
+
+            drawStrokes() {
+                const svg = document.getElementById('gridSvg');
+                let drawLayer = document.getElementById('drawLayer');
+                const offset = 50;
+                
+                // 如果drawLayer不存在，创建一个
+                if (!drawLayer) {
+                    drawLayer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    drawLayer.setAttribute('id', 'drawLayer');
+                    svg.appendChild(drawLayer);
+                }
+                
+                // Clear existing strokes
+                const existingStrokes = drawLayer.querySelectorAll('.stroke-path');
+                existingStrokes.forEach(stroke => stroke.remove());
+                
+                // 绘制所有线段
+                Object.values(this.strokes).forEach(stroke => {
+                    if (stroke && stroke.length >= 2) {
+                        if (stroke.type === 'curve') {
+                            // 绘制贝塞尔曲线
+                            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                            path.setAttribute('d', stroke.path);
+                            path.setAttribute('class', 'stroke-path');
+                            path.setAttribute('stroke', '#000');
+                            path.setAttribute('stroke-width', this.strokeWidth.toString());
+                            path.setAttribute('fill', 'none');
+                            path.setAttribute('stroke-linecap', 'round');
+                            path.style.strokeWidth = this.strokeWidth + 'px';
+                            drawLayer.appendChild(path);
+                        } else if (stroke.bend && stroke.bend > 0) {
+                            // 绘制弯曲的线段
+                            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                            const pathData = this.generateBentPath(stroke, offset);
+                            path.setAttribute('d', pathData);
+                            path.setAttribute('class', 'stroke-path');
+                            path.setAttribute('stroke', '#000');
+                            path.setAttribute('stroke-width', this.strokeWidth.toString());
+                            path.setAttribute('fill', 'none');
+                            path.setAttribute('stroke-linecap', 'round');
+                            path.style.strokeWidth = this.strokeWidth + 'px';
+                            drawLayer.appendChild(path);
+                        } else {
+                            // 绘制直线
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+                    const points = stroke.map(p => 
+                                `${offset + p.x * this.widthSpacing},${offset + p.y * this.heightSpacing}`
+                    ).join(' ');
+                    
+                    path.setAttribute('points', points);
+                    path.setAttribute('class', 'stroke-path');
+                    path.setAttribute('stroke', '#000');
+                            path.setAttribute('stroke-width', this.strokeWidth.toString());
+                    path.setAttribute('fill', 'none');
+                    path.setAttribute('stroke-linecap', 'round');
+                            path.style.strokeWidth = this.strokeWidth + 'px';
+                    
+                    drawLayer.appendChild(path);
+                        }
+                    }
+                });
+            }
+
+            loadLetter(letter) {
+                this.currentLetter = letter;
+                this.strokes = this.letterData[letter] || {};
+                
+                // 清空操作历史
+                this.operationHistory = [];
+                this.historyIndex = -1;
+                
+                // 更新字母按钮状态
+                document.querySelectorAll('.letter-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.textContent === letter) {
+                        btn.classList.add('active');
+                    }
+                });
+                
+                this.drawStrokes();
+                this.updatePreview();
+                this.updateTextPreview(); // 更新文字预览
+            }
+
+            clearLetter() {
+                // 1. 直接清空所有数据状态
+                this.strokes = {};
+                this.selectedPoints = [];
+                this.selectedStroke = null;
+                this.isDragging = false;
+                this.draggedStroke = null;
+                this.dragStartPos = null;
+                this.dragStartState = null;
+                
+                // 2. 直接操作DOM清除所有视觉元素
+                const svg = document.getElementById('gridSvg');
+                const drawLayer = document.getElementById('drawLayer');
+                
+                // Clear all stroke elements
+                if (drawLayer) {
+                    const allStrokes = drawLayer.querySelectorAll('.stroke-path');
+                    allStrokes.forEach(el => el.remove());
+                }
+                
+                // 清除所有悬停效果
+                const hoverStrokes = svg.querySelectorAll('.hover-stroke');
+                hoverStrokes.forEach(el => el.remove());
+                
+                // 清除选中点的高亮
+                const highlightedPoints = svg.querySelectorAll('.selected-point');
+                highlightedPoints.forEach(el => el.remove());
+                
+                // 3. 重置交互状态
+                svg.style.cursor = 'default';
+                
+                // 4. 完全清空操作历史
+                this.operationHistory = [];
+                this.historyIndex = -1;
+                
+                // 5. 直接保存清空状态到本地存储
+                this.letterData[this.currentLetter] = {};
+                localStorage.setItem('fontDrawingData', JSON.stringify(this.letterData));
+                
+                // 6. 更新字母预览
+                this.updatePreview();
+                
+                // 7. 更新文字预览
+                this.updateTextPreview();
+                
+
+            }
+
+            adaptStrokesToNewGrid() {
+                // 获取当前网格大小
+                const fixedWidth = 400;
+                const fixedHeight = 400;
+                const currentWidthPoints = Math.floor(fixedWidth / this.widthSpacing);
+                const currentHeightPoints = Math.floor(fixedHeight / this.heightSpacing);
+                
+                // 如果当前字母没有数据，直接返回
+                if (!this.letterData[this.currentLetter] || Object.keys(this.letterData[this.currentLetter]).length === 0) {
+                    return;
+                }
+                
+                // 获取原始数据
+                const originalStrokes = this.letterData[this.currentLetter];
+                const originalSize = this.originalGridSize[this.currentLetter];
+                
+                // 如果没有记录原始大小，使用默认值
+                if (!originalSize) {
+                    return;
+                }
+                
+                // Create new stroke data
+                const newStrokes = {};
+                let strokeId = 0;
+                
+                                        // Iterate through all original strokes
+                Object.values(originalStrokes).forEach(stroke => {
+                    if (stroke && stroke.length >= 2) {
+                        const newStroke = [];
+                        
+                        // 映射每个点到新网格，使用最近点算法
+                        stroke.forEach(point => {
+                            const mappedPoint = this.findNearestGridPoint(point, originalSize, currentWidthPoints, currentHeightPoints);
+                            if (mappedPoint) {
+                                newStroke.push(mappedPoint);
+                            }
+                        });
+                        
+                        // If mapped stroke has at least 2 points, save it
+                        if (newStroke.length >= 2) {
+                            newStrokes[strokeId++] = newStroke;
+                        }
+                    }
+                });
+                
+                // Update current strokes and redraw
+                this.strokes = newStrokes;
+                    this.drawStrokes();
+                    this.updatePreview();
+                }
+
+            findNearestGridPoint(point, originalSize, newWidthPoints, newHeightPoints) {
+                // 计算原始点的相对位置（0-1之间）
+                const relativeX = point.x / originalSize.width;
+                const relativeY = point.y / originalSize.height;
+                
+                // 映射到新网格的连续坐标
+                const continuousX = relativeX * newWidthPoints;
+                const continuousY = relativeY * newHeightPoints;
+                
+                // 找到最近的网格点
+                const nearestX = Math.round(continuousX);
+                const nearestY = Math.round(continuousY);
+                
+                // 确保点在新网格范围内
+                if (nearestX >= 0 && nearestX <= newWidthPoints && nearestY >= 0 && nearestY <= newHeightPoints) {
+                    return { x: nearestX, y: nearestY };
+                }
+                
+                // 如果超出范围，找到边界上最近的点
+                const clampedX = Math.max(0, Math.min(newWidthPoints, nearestX));
+                const clampedY = Math.max(0, Math.min(newHeightPoints, nearestY));
+                
+                return { x: clampedX, y: clampedY };
+            }
+
+            mapPointToNewGrid(point, originalSize, newWidthPoints, newHeightPoints) {
+                // 计算原始点的相对位置（0-1之间）
+                const relativeX = point.x / originalSize.width;
+                const relativeY = point.y / originalSize.height;
+                
+                // 映射到新网格
+                const newX = Math.round(relativeX * newWidthPoints);
+                const newY = Math.round(relativeY * newHeightPoints);
+                
+                // 确保点在新网格范围内
+                if (newX >= 0 && newX <= newWidthPoints && newY >= 0 && newY <= newHeightPoints) {
+                    return { x: newX, y: newY };
+                }
+                
+                return null;
+            }
+
+
+
+
+
+            saveLetter() {
+                this.letterData[this.currentLetter] = { ...this.strokes };
+                alert(`字母 ${this.currentLetter} 已保存！`);
+            }
+
+            autoSaveLetter() {
+                // 自动保存当前字母，不显示提示
+                this.letterData[this.currentLetter] = { ...this.strokes };
+                // 记录当前网格大小作为原始大小
+                const fixedWidth = 400;
+                const fixedHeight = 400;
+                this.originalGridSize[this.currentLetter] = {
+                    width: Math.floor(fixedWidth / this.widthSpacing),
+                    height: Math.floor(fixedHeight / this.heightSpacing)
+                };
+                // 更新文字预览以显示新保存的字母
+                this.updateTextPreview();
+                
+                // 显示保存指示器
+                this.showSaveIndicator();
+            }
+
+            showSaveIndicator() {
+                const indicator = document.getElementById('saveIndicator');
+                if (indicator) {
+                    indicator.style.display = 'block';
+                    // 2秒后自动隐藏
+                    setTimeout(() => {
+                        indicator.style.display = 'none';
+                    }, 2000);
+                }
+            }
+
+            updatePreview() {
+                const previewSvg = document.getElementById('previewSvg');
+                previewSvg.innerHTML = '';
+                
+                const offset = 10;
+                // 使用固定的缩放比例，确保图形大小一致
+                const scale = 0.2; // 固定缩放比例，80/400 = 0.2
+                
+                // 计算映射的线条粗细：按比例缩放，确保在预览尺寸下可见
+                const mappedStrokeWidth = Math.max(1.0, this.strokeWidth * scale * 2); // 按比例缩放，最小1px
+                
+                Object.values(this.strokes).forEach(stroke => {
+                    if (stroke && stroke.length >= 2) {
+                        if (stroke.type === 'curve') {
+                            // 绘制贝塞尔曲线
+                            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                            // 缩放贝塞尔曲线路径
+                            const scaledPath = this.scaleBezierPath(stroke.path, scale, offset);
+                            path.setAttribute('d', scaledPath);
+                            path.setAttribute('class', 'preview-path');
+                            path.setAttribute('stroke', '#000');
+                            path.setAttribute('stroke-width', mappedStrokeWidth.toString());
+                            path.setAttribute('fill', 'none');
+                            path.setAttribute('stroke-linecap', 'round');
+                            path.style.strokeWidth = mappedStrokeWidth + 'px';
+                            previewSvg.appendChild(path);
+                        } else if (stroke.bend && stroke.bend > 0) {
+                            // 绘制弯曲的线段
+                            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                            const scaledPath = this.scaleBentPath(stroke, scale, offset);
+                            path.setAttribute('d', scaledPath);
+                            path.setAttribute('class', 'preview-path');
+                            path.setAttribute('stroke', '#000');
+                            path.setAttribute('stroke-width', mappedStrokeWidth.toString());
+                            path.setAttribute('fill', 'none');
+                            path.setAttribute('stroke-linecap', 'round');
+                            path.style.strokeWidth = mappedStrokeWidth + 'px';
+                            previewSvg.appendChild(path);
+                        } else {
+                            // 绘制直线
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+                    const points = stroke.map(p => 
+                                `${offset + p.x * this.widthSpacing * scale},${offset + p.y * this.heightSpacing * scale}`
+                    ).join(' ');
+                    
+                    path.setAttribute('points', points);
+                    path.setAttribute('class', 'preview-path');
+                    path.setAttribute('stroke', '#000');
+                            path.setAttribute('stroke-width', mappedStrokeWidth.toString());
+                    path.setAttribute('fill', 'none');
+                    path.setAttribute('stroke-linecap', 'round');
+                            path.style.strokeWidth = mappedStrokeWidth + 'px';
+                    
+                    previewSvg.appendChild(path);
+                        }
+                    }
+                });
+                
+                this.updateTextPreview();
+            }
+
+            updateTextPreview() {
+                const textPreview = document.getElementById('textPreview');
+                textPreview.innerHTML = '';
+                
+                const text = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                const letters = text.split('');
+                
+                letters.forEach(letter => {
+                    const span = document.createElement('span');
+                    span.textContent = letter;
+                    
+                    if (this.letterData[letter] && Object.keys(this.letterData[letter]).length > 0) {
+                        // 创建SVG元素来显示绘制的字体
+                        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                        svg.setAttribute('width', '24');
+                        svg.setAttribute('height', '24');
+                        svg.setAttribute('viewBox', '0 0 24 24');
+                        svg.style.display = 'inline-block';
+                        svg.style.verticalAlign = 'middle';
+                        svg.style.marginRight = '2px';
+                        
+                        const strokes = this.letterData[letter];
+                        Object.values(strokes).forEach(stroke => {
+                            if (stroke && stroke.length >= 2) {
+                                const scale = 0.05; // 固定缩放比例
+                                const offset = 2;
+                                
+                                // 计算映射的线条粗细：按比例缩放，确保在小尺寸下可见
+                                const mappedStrokeWidth = Math.max(0.5, this.strokeWidth * scale * 2); // 按比例缩放，最小0.5px
+                                
+                                if (stroke.type === 'curve') {
+                                    // 绘制贝塞尔曲线
+                                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                                    const scaledPath = this.scaleBezierPath(stroke.path, scale, offset);
+                                    path.setAttribute('d', scaledPath);
+                                    path.setAttribute('stroke', '#000');
+                                    path.setAttribute('stroke-width', mappedStrokeWidth.toString());
+                                    path.setAttribute('fill', 'none');
+                                    path.style.strokeWidth = mappedStrokeWidth + 'px';
+                                    svg.appendChild(path);
+                                } else if (stroke.bend && stroke.bend > 0) {
+                                    // 绘制弯曲的线段
+                                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                                    const scaledPath = this.scaleBentPath(stroke, scale, offset);
+                                    path.setAttribute('d', scaledPath);
+                                    path.setAttribute('stroke', '#000');
+                                    path.setAttribute('stroke-width', mappedStrokeWidth.toString());
+                                    path.setAttribute('fill', 'none');
+                                    path.style.strokeWidth = mappedStrokeWidth + 'px';
+                                    svg.appendChild(path);
+                    } else {
+                                    // 绘制直线
+                                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+                                    const points = stroke.map(p => 
+                                        `${offset + p.x * this.widthSpacing * scale},${offset + p.y * this.heightSpacing * scale}`
+                                    ).join(' ');
+                                    
+                                    path.setAttribute('points', points);
+                                    path.setAttribute('stroke', '#000');
+                                    path.setAttribute('stroke-width', mappedStrokeWidth.toString());
+                                    path.setAttribute('fill', 'none');
+                                    path.setAttribute('stroke-linecap', 'round');
+                                    path.style.strokeWidth = mappedStrokeWidth + 'px';
+                                    
+                                    svg.appendChild(path);
+                                }
+                            }
+                        });
+                        
+                        span.innerHTML = '';
+                        span.appendChild(svg);
+                    } else {
+                        // 未绘制的字母显示为灰色
+                        span.style.color = '#ccc';
+                        span.style.fontSize = '20px';
+                        span.style.fontWeight = 'normal';
+                        span.style.fontFamily = 'Arial, sans-serif';
+                    }
+                    
+                    textPreview.appendChild(span);
+                });
+            }
+
+            exportJSON() {
+                const data = {
+                    widthSpacing: this.widthSpacing,
+                    heightSpacing: this.heightSpacing,
+                    letters: this.letterData
+                };
+                
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'font-data.json';
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+
+            exportSVG() {
+                const svgData = {};
+                
+                Object.keys(this.letterData).forEach(letter => {
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('width', '100');
+                    svg.setAttribute('height', '100');
+                    svg.setAttribute('viewBox', '0 0 100 100');
+                    
+                    const strokes = this.letterData[letter];
+                    Object.values(strokes).forEach(stroke => {
+                        if (stroke && stroke.length >= 2) {
+                            // 使用固定的缩放比例，确保图形大小一致
+                            const scale = 0.2; // 固定缩放比例，80/400 = 0.2
+                        const offset = 10;
+                        
+                            // 计算映射的线条粗细：将1-10的粗细映射到2.0-8.0
+                            const mappedStrokeWidth = Math.max(2.0, Math.min(8.0, 2.0 + (this.strokeWidth - 1) * 0.67));
+                            
+                            if (stroke.type === 'curve') {
+                                // 导出贝塞尔曲线
+                                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                                const scaledPath = this.scaleBezierPath(stroke.path, scale, offset);
+                                path.setAttribute('d', scaledPath);
+                                path.setAttribute('stroke', '#000');
+                                path.setAttribute('stroke-width', mappedStrokeWidth.toString());
+                                path.setAttribute('fill', 'none');
+                                svg.appendChild(path);
+                            } else if (stroke.bend && stroke.bend > 0) {
+                                // 导出弯曲的线段
+                                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                                const scaledPath = this.scaleBentPath(stroke, scale, offset);
+                                path.setAttribute('d', scaledPath);
+                                path.setAttribute('stroke', '#000');
+                                path.setAttribute('stroke-width', mappedStrokeWidth.toString());
+                                path.setAttribute('fill', 'none');
+                                svg.appendChild(path);
+                            } else {
+                                // 导出直线
+                                const path = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+                        const points = stroke.map(p => 
+                                    `${offset + p.x * this.widthSpacing * scale},${offset + p.y * this.heightSpacing * scale}`
+                        ).join(' ');
+                        
+                        path.setAttribute('points', points);
+                        path.setAttribute('stroke', '#000');
+                                path.setAttribute('stroke-width', mappedStrokeWidth.toString());
+                        path.setAttribute('fill', 'none');
+                        
+                        svg.appendChild(path);
+                            }
+                        }
+                    });
+                    
+                    svgData[letter] = svg.outerHTML;
+                });
+                
+                const blob = new Blob([JSON.stringify(svgData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'font-svg.json';
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+
+            exportFont() {
+                // 检查是否有绘制的字母
+                const drawnLetters = Object.keys(this.letterData).filter(letter => 
+                    Object.keys(this.letterData[letter]).length > 0
+                );
+                
+                if (drawnLetters.length === 0) {
+                    return;
+                }
+                
+                // 直接导出SVG图片压缩包
+                this.exportSVGZip();
+            }
+
+
+
+            async exportSVGZip() {
+                const zip = new JSZip();
+                const drawnLetters = Object.keys(this.letterData).filter(letter => 
+                    Object.keys(this.letterData[letter]).length > 0
+                );
+                
+                // 为每个字母生成SVG图片
+                drawnLetters.forEach(letter => {
+                    const svgContent = this.generateLetterSVG(letter);
+                    zip.file(`${letter}.svg`, svgContent);
+                });
+                
+                // 生成压缩包
+                const zipBlob = await zip.generateAsync({type: 'blob'});
+                const url = URL.createObjectURL(zipBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'font-letters.zip';
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+
+            generateLetterSVG(letter) {
+                const strokes = this.letterData[letter];
+                const size = 100;
+                // 使用固定的缩放比例，确保图形大小一致
+                const scale = 0.2; // 固定缩放比例，80/400 = 0.2
+                const offset = 10;
+                
+                // 计算映射的线条粗细：将1-10的粗细映射到2.0-8.0，确保在导出尺寸下可见
+                const mappedStrokeWidth = Math.max(2.0, Math.min(8.0, 2.0 + (this.strokeWidth - 1) * 0.67));
+                
+                let svgContent = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+                svgContent += `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">\n`;
+                
+                Object.values(strokes).forEach(stroke => {
+                    if (stroke && stroke.length >= 2) {
+                        if (stroke.type === 'curve') {
+                            // 导出贝塞尔曲线
+                            const scaledPath = this.scaleBezierPath(stroke.path, scale, offset);
+                            svgContent += `  <path d="${scaledPath}" stroke="black" stroke-width="${mappedStrokeWidth}" fill="none"/>\n`;
+                        } else if (stroke.bend && stroke.bend > 0) {
+                            // 导出弯曲的线段
+                            const scaledPath = this.scaleBentPath(stroke, scale, offset);
+                            svgContent += `  <path d="${scaledPath}" stroke="black" stroke-width="${mappedStrokeWidth}" fill="none"/>\n`;
+                        } else {
+                            // 导出直线
+                            const points = stroke.map(p => 
+                                `${offset + p.x * this.widthSpacing * scale},${offset + p.y * this.heightSpacing * scale}`
+                            ).join(' ');
+                            
+                            svgContent += `  <polyline points="${points}" stroke="black" stroke-width="${mappedStrokeWidth}" fill="none"/>\n`;
+                        }
+                    }
+                });
+                
+                svgContent += `</svg>`;
+                return svgContent;
+            }
+
+            // 模式切换方法
+
+
+        }
+
+        // 初始化应用
+        document.addEventListener('DOMContentLoaded', () => {
+            new FontDrawingTool();
+        });
+    </script>
+</body>
+</html>
